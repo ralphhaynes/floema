@@ -79,8 +79,6 @@ app.get('/', async (req, res) => {
     fetchLinks: 'product.image'
   })
 
-  console.log(defaults.navigation)
-
   res.render('pages/home', {
     ...defaults,
     collections,
