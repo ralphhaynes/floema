@@ -8,17 +8,13 @@ import Media from './Media'
 export default class {
   constructor ({ gl, scene, sizes }) {
     this.gl = gl
+    this.scene = scene
     this.sizes = sizes
 
     this.group = new Transform()
 
     this.galleryElement = document.querySelector('.home__gallery')
     this.mediasElements = document.querySelectorAll('.home__gallery__media__image')
-
-    this.createGeometry()
-    this.createGallery()
-
-    this.group.setParent(scene)
 
     this.x = {
       current: 0,
@@ -41,6 +37,13 @@ export default class {
       x: 0,
       y: 0
     }
+
+    this.createGeometry()
+    this.createGallery()
+
+    this.group.setParent(this.scene)
+
+    this.show()
   }
 
   createGeometry () {
@@ -58,6 +61,17 @@ export default class {
         sizes: this.sizes
       })
     })
+  }
+
+  /**
+   * Animations.
+   */
+  show () {
+    map(this.medias, media => media.show())
+  }
+
+  hide () {
+    map(this.medias, media => media.hide())
   }
 
   /**
@@ -121,7 +135,7 @@ export default class {
     } else if (this.scroll.y > this.y.current) {
       this.y.direction = 'bottom'
     }
-    
+
     this.scroll.x = this.x.current
     this.scroll.y = this.y.current
 
@@ -133,7 +147,7 @@ export default class {
 
         if (x < -this.sizes.width / 2) {
           media.extra.x += this.gallerySizes.width
-          
+
           media.mesh.rotation.z = GSAP.utils.random(-Math.PI * 0.03, Math.PI * 0.03)
         }
 
@@ -142,7 +156,7 @@ export default class {
 
         if (x > this.sizes.width / 2) {
           media.extra.x -= this.gallerySizes.width
-          
+
           media.mesh.rotation.z = GSAP.utils.random(-Math.PI * 0.03, Math.PI * 0.03)
         }
       }
@@ -154,7 +168,7 @@ export default class {
 
         if (y < -this.sizes.height / 2) {
           media.extra.y += this.gallerySizes.height
-          
+
           media.mesh.rotation.z = GSAP.utils.random(-Math.PI * 0.03, Math.PI * 0.03)
         }
       } else if (this.y.direction === 'bottom') {
@@ -162,12 +176,19 @@ export default class {
 
         if (y > this.sizes.height / 2) {
           media.extra.y -= this.gallerySizes.height
-          
+
           media.mesh.rotation.z = GSAP.utils.random(-Math.PI * 0.03, Math.PI * 0.03)
         }
       }
 
       media.update(this.scroll)
     })
+  }
+
+  /**
+   * Destroy.
+   */
+  destroy () {
+    this.scene.removeChild(this.group)
   }
 }
