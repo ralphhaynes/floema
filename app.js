@@ -29,7 +29,7 @@ const initApi = req => {
 
 const handleLinkResolver = doc => {
   if (doc.type === 'product') {
-    return `/detail/${doc.slug}`
+    return `/detail/${doc.uid}`
   }
 
   if (doc.type === 'collections') {
@@ -116,6 +116,7 @@ app.get('/collections', async (req, res) => {
 app.get('/detail/:uid', async (req, res) => {
   const api = await initApi(req)
   const defaults = await handleRequest(api)
+  const home = await api.getSingle('home')
 
   const product = await api.getByUID('product', req.params.uid, {
     fetchLinks: 'collection.title'
@@ -123,6 +124,7 @@ app.get('/detail/:uid', async (req, res) => {
 
   res.render('pages/detail', {
     ...defaults,
+    home,
     product
   })
 })

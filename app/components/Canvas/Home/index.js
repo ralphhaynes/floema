@@ -150,7 +150,6 @@ export default class {
 
           media.mesh.rotation.z = GSAP.utils.random(-Math.PI * 0.03, Math.PI * 0.03)
         }
-
       } else if (this.x.direction === 'right') {
         const x = media.mesh.position.x - scaleX
 
