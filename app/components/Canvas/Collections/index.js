@@ -77,8 +77,6 @@ export default class {
 
       GSAP.delayedCall(1, _ => {
         this.scroll.current = this.scroll.target = this.scroll.last = this.scroll.start = -media.mesh.position.x
-
-        console.log(media.mesh.position.x, this.scroll.current)
       })
 
       this.transition.animate(this.medias[0].mesh, _ => {
@@ -152,8 +150,6 @@ export default class {
     this.scroll.target = GSAP.utils.clamp(-this.scroll.limit, 0, this.scroll.target)
 
     this.scroll.current = GSAP.utils.interpolate(this.scroll.current, this.scroll.target, this.scroll.lerp)
-
-    console.log(this.scroll.current)
 
     this.galleryElement.style[this.transformPrefix] = `translateX(${this.scroll.current}px)`
 
