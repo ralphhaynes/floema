@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
     "backend:build": "node app.js",
-    "backend:development": "node app.js",
+    "backend:development": "nodemon app.js",
     "frontend:build": "webpack --progress --config webpack.config.build.js",
     "frontend:development": "webpack serve --progress --config webpack.config.development.js",
     "start": "concurrently --kill-others \"npm run backend:development\" \"npm run frontend:development\""
@@ -12,6 +12,7 @@
   "devDependencies": {
     "babel-loader": "^8.2.2",
     "clean-webpack-plugin": "^4.0.0-alpha.0",
+    "concurrently": "^6.1.0",
     "copy-webpack-plugin": "^8.1.1",
     "css-loader": "^5.2.2",
     "eslint": "^7.24.0",
