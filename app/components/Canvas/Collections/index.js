@@ -1,4 +1,4 @@
-import { Plane, Transform } from 'ogl'
+import { Plane, Raycast, Transform, Vec2 } from 'ogl'
 import GSAP from 'gsap'
 import Prefix from 'prefix'
 
@@ -7,10 +7,12 @@ import map from 'lodash/map'
 import Media from './Media'
 
 export default class {
-  constructor ({ gl, scene, sizes, transition }) {
+  constructor ({ camera, gl, renderer, scene, sizes, transition }) {
     this.id = 'collections'
 
+    this.camera = camera
     this.gl = gl
+    this.renderer = renderer
     this.scene = scene
     this.sizes = sizes
     this.transition = transition
@@ -19,7 +21,6 @@ export default class {
 
     this.group = new Transform()
 
-    this.galleryElement = document.querySelector('.collections__gallery')
     this.galleryWrapperElement = document.querySelector('.collections__gallery__wrapper')
 
     this.titlesElement = document.querySelector('.collections__titles')
@@ -27,7 +28,10 @@ export default class {
     this.collectionsElements = document.querySelectorAll('.collections__article')
     this.collectionsElementsActive = 'collections__article--active'
 
+    this.detailsElements = document.querySelectorAll('.detail')
     this.mediasElements = document.querySelectorAll('.collections__gallery__media')
+
+    this.mouse = new Vec2()
 
     this.scroll = {
       current: 0,
@@ -37,16 +41,17 @@ export default class {
       velocity: 1
     }
 
+    this.createRaycast()
     this.createGeometry()
     this.createGallery()
 
     this.onResize({
       sizes: this.sizes
     })
+  }
 
-    this.group.setParent(this.scene)
-
-    this.show()
+  createRaycast () {
+    this.raycast = new Raycast(this.gl)
   }
 
   createGeometry () {
@@ -56,6 +61,7 @@ export default class {
   createGallery () {
     this.medias = map(this.mediasElements, (element, index) => {
       return new Media({
+        detail: this.detailsElements[index],
         element,
         geometry: this.geometry,
         index,
@@ -64,12 +70,16 @@ export default class {
         sizes: this.sizes
       })
     })
+
+    this.mediasMeshes = map(this.medias, media => media.jewlery)
   }
 
   /**
    * Animations.
    */
   async show () {
+    this.group.setParent(this.scene)
+
     if (this.transition) {
       const { src } = this.transition.mesh.program.uniforms.tMap.value.image
       const texture = window.TEXTURES[src]
@@ -99,6 +109,8 @@ export default class {
   }
 
   hide () {
+    this.group.setParent(null)
+
     map(this.medias, media => media.hide())
   }
 
@@ -119,6 +131,16 @@ export default class {
 
   onTouchDown ({ x, y }) {
     this.scroll.last = this.scroll.current
+
+    this.mouse.set(2.0 * (x.start / this.renderer.width) - 1.0, 2.0 * (1.0 - y.start / this.renderer.height) - 1.0)
+
+    this.raycast.castMouse(this.camera, this.mouse)
+
+    map(this.medias, media => (media.isHit = false))
+
+    const [hit] = this.raycast.intersectBounds(this.mediasMeshes)
+
+    this.hit = hit.index
   }
 
   onTouchMove ({ x, y }) {
@@ -128,7 +150,7 @@ export default class {
   }
 
   onTouchUp ({ x, y }) {
-
+    this.medias[this.hit].animateIn()
   }
 
   onWheel ({ pixelY }) {
@@ -162,8 +184,6 @@ export default class {
 
     this.scroll.current = GSAP.utils.interpolate(this.scroll.current, this.scroll.target, this.scroll.lerp)
 
-    this.galleryElement.style[this.transformPrefix] = `translateX(${this.scroll.current}px)`
-
     if (this.scroll.last < this.scroll.current) {
       this.scroll.direction = 'right'
     } else if (this.scroll.last > this.scroll.current) {
@@ -172,7 +192,7 @@ export default class {
 
     this.scroll.last = this.scroll.current
 
-    const index = Math.floor(Math.abs((this.scroll.current - (this.medias[0].bounds.width / 2)) / this.scroll.limit) * (this.medias.length - 1))
+    const index = Math.floor(Math.abs((this.scroll.current - (this.medias[0].collectionsBounds.width / 2)) / this.scroll.limit) * (this.medias.length - 1))
 
     if (this.index !== index) {
       this.onChange(index)

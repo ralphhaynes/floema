@@ -1,9 +1,13 @@
 import { Texture } from 'ogl'
 import GSAP from 'gsap'
 
+import each from 'lodash/each'
+
 import Component from 'classes/Component'
 
-import { split } from 'utils/text'
+import { BREAKPOINT_PHONE } from 'utils/breakpoints'
+import { DEFAULT as ease } from 'utils/easings'
+import { calculate, split } from 'utils/text'
 
 export default class Preloader extends Component {
   constructor ({ canvas }) {
@@ -20,17 +24,23 @@ export default class Preloader extends Component {
 
     window.TEXTURES = {}
 
-    split({
+    const spans = split({
+      append: false,
       element: this.elements.title,
-      expression: '<br>'
+      expression: ' '
     })
 
-    split({
-      element: this.elements.title,
-      expression: '<br>'
-    })
+    this.elements.titleSpans = []
 
-    this.elements.titleSpans = this.elements.title.querySelectorAll('span span')
+    each(spans, element => {
+      const spans = split({
+        append: true,
+        element,
+        expression: ' '
+      })
+
+      this.elements.titleSpans.push(...spans)
+    })
 
     this.length = 0
 
@@ -77,19 +87,24 @@ export default class Preloader extends Component {
         delay: 1
       })
 
-      this.animateOut.to(this.elements.titleSpans, {
-        duration: 1.5,
-        ease: 'expo.out',
-        stagger: 0.1,
-        y: '100%'
+      const lines = calculate(this.elements.titleSpans)
+
+      lines.forEach((line, index) => {
+        this.animateOut.to(line, {
+          autoAlpha: 0,
+          delay: 0.2 * index,
+          duration: 1.5,
+          ease: 'expo.inOut',
+          y: -25
+        }, 'start')
       })
 
       this.animateOut.to(this.elements.numberText, {
-        duration: 1.5,
-        ease: 'expo.out',
+        duration: 1,
+        ease,
         stagger: 0.1,
         y: '100%'
-      }, '-=1.4')
+      }, 'start')
 
       this.animateOut.to(this.element, {
         autoAlpha: 0,

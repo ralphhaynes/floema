@@ -6,6 +6,11 @@
   z-index: z('content');
 }
 
+%page--active {
+  opacity: 1;
+  visibility: visible;
+}
+
 %page__wrapper {
   color: inherit;
 }

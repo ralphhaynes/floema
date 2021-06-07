@@ -22,7 +22,7 @@ html {
 
 body {
   @extend %cover;
-  @extend %description-16;
+  @extend %description-18;
 
   font-family: $font-suisse-bp;
   position: fixed;
@@ -69,5 +69,29 @@ img {
     display: inline-block;
     overflow: hidden;
     vertical-align: top;
+  }
+}
+
+[data-animation="button"] {
+  display: inline-block;
+  position: relative;
+  white-space: nowrap;
+
+  span {
+    display: inline-block;
+    transform-origin: center center 0.5em;
+    vertical-align: middle;
+  }
+}
+
+[data-animation="link"] {
+  display: inline-block;
+  position: relative;
+  white-space: nowrap;
+
+  span {
+    display: inline-block;
+    transform-origin: center center 0.5em;
+    vertical-align: middle;
   }
 }

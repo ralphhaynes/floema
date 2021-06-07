@@ -23,8 +23,6 @@ export default class {
     this.createBounds({
       sizes: this.sizes
     })
-
-    this.show()
   }
 
   createTexture () {

@@ -117,7 +117,7 @@ export default class {
   updateY (y = 0) {
     this.y = (this.bounds.top + y) / window.innerHeight
 
-    const extra = Detection.isPhone() ? 15 : 40
+    const extra = Detection.isPhone() ? 15 : 60
 
     this.mesh.position.y = (this.sizes.height / 2) - (this.mesh.scale.y / 2) - (this.y * this.sizes.height)
     this.mesh.position.y += Math.cos((this.mesh.position.x / this.sizes.width) * Math.PI * 0.1) * extra - extra

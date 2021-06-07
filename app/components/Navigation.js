@@ -1,8 +1,10 @@
 import GSAP from 'gsap'
 
+import Link from 'animations/Link'
 import Component from 'classes/Component'
 
 import { COLOR_BRIGHT_GRAY, COLOR_QUARTER_SPANISH_WHITE } from 'utils/colors'
+import { mapEach } from 'utils/dom'
 
 export default class Navigation extends Component {
   constructor ({ template }) {
@@ -14,11 +16,17 @@ export default class Navigation extends Component {
       }
     })
 
+    this.links = mapEach(this.elements.links, element => {
+      return new Link({
+        element
+      })
+    })
+
     this.onChange(template)
   }
 
   onChange (template) {
-    if (template === 'about') {
+    if (template === '/about') {
       GSAP.to(this.element, {
         color: COLOR_BRIGHT_GRAY,
         duration: 1.5

@@ -51,6 +51,14 @@
   }
 }
 
+.about__highlight__link[href] {
+  transition: color 0.4s ease;
+
+  &:hover {
+    color: $color-white;
+  }
+}
+
 .about__highlight__title {
   @extend %title-200;
 
@@ -68,6 +76,7 @@
 
 .about__highlight__media {
   height: 76rem;
+  overflow: hidden;
   position: absolute;
   width: 54rem;
 
@@ -85,7 +94,7 @@
     bottom: 0;
     right: 0;
   }
-  
+
   @include media('<=phone') {
     .about__highlight:last-child & {
       height: 76rem;

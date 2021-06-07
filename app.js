@@ -5,6 +5,7 @@ const express = require('express')
 const errorHandler = require('errorhandler')
 const bodyParser = require('body-parser')
 const methodOverride = require('method-override')
+const find = require('lodash/find')
 
 const app = express()
 const path = require('path')
@@ -72,8 +73,22 @@ const handleRequest = async api => {
   const navigation = await api.getSingle('navigation')
   const preloader = await api.getSingle('preloader')
 
-  const { results: collections } = await api.query(Prismic.Predicates.at('document.type', 'collection'), {
-    fetchLinks: 'product.image'
+  const { results: collectionsData } = await api.query(Prismic.Predicates.at('document.type', 'collection'), {
+    fetchLinks: 'product.image, product.model'
+  })
+
+  const { results: products } = await api.query(Prismic.Predicates.at('document.type', 'product'), {
+    fetchLinks: 'collection.title',
+    pageSize: 100
+  })
+
+  const { data: { list: collectionsOrder } } = await api.getSingle('collections')
+
+  const collections = collectionsOrder.map(({ collection }) => {
+    const { uid } = collection
+    const data = find(collectionsData, { uid })
+
+    return data
   })
 
   const assets = []
@@ -97,8 +112,11 @@ const handleRequest = async api => {
   collections.forEach(collection => {
     collection.data.products.forEach(item => {
       assets.push(item.products_product.data.image.url)
+      assets.push(item.products_product.data.model.url)
     })
   })
+
+  console.log(products)
 
   return {
     about,
@@ -107,7 +125,8 @@ const handleRequest = async api => {
     home,
     meta,
     navigation,
-    preloader
+    preloader,
+    products
   }
 }
 
@@ -115,7 +134,7 @@ app.get('/', async (req, res) => {
   const api = await initApi(req)
   const defaults = await handleRequest(api)
 
-  res.render('pages/home', {
+  res.render('base', {
     ...defaults
   })
 })
@@ -124,7 +143,7 @@ app.get('/about', async (req, res) => {
   const api = await initApi(req)
   const defaults = await handleRequest(api)
 
-  res.render('pages/about', {
+  res.render('base', {
     ...defaults
   })
 })
@@ -133,7 +152,7 @@ app.get('/collections', async (req, res) => {
   const api = await initApi(req)
   const defaults = await handleRequest(api)
 
-  res.render('pages/collections', {
+  res.render('base', {
     ...defaults
   })
 })
@@ -142,13 +161,8 @@ app.get('/detail/:uid', async (req, res) => {
   const api = await initApi(req)
   const defaults = await handleRequest(api)
 
-  const product = await api.getByUID('product', req.params.uid, {
-    fetchLinks: 'collection.title'
-  })
-
-  res.render('pages/detail', {
-    ...defaults,
-    product
+  res.render('base', {
+    ...defaults
   })
 })
 

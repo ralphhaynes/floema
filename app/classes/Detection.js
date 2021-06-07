@@ -10,23 +10,31 @@ class Detection {
   }
 
   isTablet () {
-    if (!this.TabletChecked) {
-      this.TabletChecked = true
+    if (!this.isTabletChecked) {
+      this.isTabletChecked = true
 
-      this.TabletCheck = document.documentElement.classList.contains('tablet')
+      this.isTabletCheck = document.documentElement.classList.contains('phone')
     }
 
-    return this.TabletCheck
+    return this.isTabletCheck
   }
 
   isDesktop () {
-    if (!this.DesktopChecked) {
-      this.DesktopChecked = true
+    return !this.isPhone()
+  }
 
-      this.DesktopCheck = document.documentElement.classList.contains('desktop')
+  isWebPSupported () {
+    if (!this.isWebPChecked) {
+      this.isWebPChecked = true
+
+      const element = document.createElement('canvas')
+
+      if (element.getContext && element.getContext('2d')) {
+        this.isWebPCheck = element.toDataURL('image/webp').indexOf('data:image/webp') === 0
+      }
     }
 
-    return this.DesktopCheck
+    return this.isWebPCheck
   }
 }
 

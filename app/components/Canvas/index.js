@@ -3,7 +3,7 @@ import { Camera, Renderer, Transform } from 'ogl'
 
 import About from './About'
 import Collections from './Collections'
-import Detail from './Detail'
+import Details from './Details'
 import Home from './Home'
 
 import Transition from './Transition'
@@ -62,13 +62,6 @@ export default class Canvas {
     })
   }
 
-  destroyHome () {
-    if (!this.home) return
-
-    this.home.destroy()
-    this.home = null
-  }
-
   /**
    * About.
    */
@@ -80,55 +73,41 @@ export default class Canvas {
     })
   }
 
-  destroyAbout () {
-    if (!this.about) return
-
-    this.about.destroy()
-    this.about = null
-  }
-
   /**
    * Collections.
    */
   createCollections () {
     this.collections = new Collections({
+      camera: this.camera,
       gl: this.gl,
+      renderer: this.renderer,
       scene: this.scene,
       sizes: this.sizes,
       transition: this.transition
     })
-  }
-
-  destroyCollections () {
-    if (!this.collections) return
-
-    this.collections.destroy()
-    this.collections = null
   }
 
   /**
    * Detail.
    */
   createDetail () {
-    this.detail = new Detail({
-      gl: this.gl,
-      scene: this.scene,
-      sizes: this.sizes,
-      transition: this.transition
-    })
-  }
-
-  destroyDetail () {
-    if (!this.detail) return
-
-    this.detail.destroy()
-    this.detail = null
+    // this.detail = new Details({
+    //   gl: this.gl,
+    //   scene: this.scene,
+    //   sizes: this.sizes,
+    //   transition: this.transition
+    // })
   }
 
   /**
    * Events.
    */
   onPreloaded () {
+    this.createAbout()
+    this.createCollections()
+    this.createDetail()
+    this.createHome()
+
     this.onChangeEnd(this.template)
   }
 
@@ -149,8 +128,8 @@ export default class Canvas {
       this.home.hide()
     }
 
-    this.isFromCollectionsToDetail = this.template === 'collections' && url.indexOf('detail') > -1
-    this.isFromDetailToCollections = this.template === 'detail' && url.indexOf('collections') > -1
+    this.isFromCollectionsToDetail = this.template === 'collections' && url.indexOf('details') > -1
+    this.isFromDetailToCollections = this.template === 'details' && url.indexOf('collections') > -1
 
     if (this.isFromCollectionsToDetail || this.isFromDetailToCollections) {
       this.transition = new Transition({
@@ -165,28 +144,22 @@ export default class Canvas {
   }
 
   onChangeEnd (template) {
-    if (template === 'about') {
-      this.createAbout()
-    } else if (this.about) {
-      this.destroyAbout()
+    console.log(template)
+
+    if (template === '/about') {
+      this.about.show()
     }
 
-    if (template === 'collections') {
-      this.createCollections()
-    } else if (this.collections) {
-      this.destroyCollections()
+    if (template === '/collections') {
+      this.collections.show()
     }
 
-    if (template === 'detail') {
-      this.createDetail()
-    } else if (this.detail) {
-      this.destroyDetail()
+    if (template === '/details') {
+      this.detail.show()
     }
 
-    if (template === 'home') {
-      this.createHome()
-    } else {
-      this.destroyHome()
+    if (template === '/') {
+      this.home.show()
     }
 
     this.template = template
@@ -271,12 +244,12 @@ export default class Canvas {
       y: this.y,
     }
 
-    if (this.about) {
-      this.about.onTouchMove(values)
-    }
-
     if (this.collections) {
       this.collections.onTouchMove(values)
+    }
+
+    if (this.about) {
+      this.about.onTouchMove(values)
     }
 
     if (this.detail) {

@@ -16,12 +16,6 @@ export default class {
     this.galleryElement = document.querySelector('.home__gallery')
     this.mediasElements = document.querySelectorAll('.home__gallery__media__image')
 
-    this.x = {
-      current: 0,
-      target: 0,
-      lerp: 0.1
-    }
-
     this.y = {
       current: 0,
       target: 0,
@@ -50,10 +44,6 @@ export default class {
     this.onResize({
       sizes: this.sizes
     })
-
-    this.group.setParent(this.scene)
-
-    this.show()
   }
 
   createGeometry () {
@@ -80,10 +70,14 @@ export default class {
    * Animations.
    */
   show () {
+    this.group.setParent(this.scene)
+
     map(this.medias, media => media.show())
   }
 
   hide () {
+    this.group.setParent(null)
+
     map(this.medias, media => media.hide())
   }
 
@@ -100,33 +94,27 @@ export default class {
       width: this.galleryBounds.width / window.innerWidth * this.sizes.width,
     }
 
-    this.scroll.x = this.x.target = 0
     this.scroll.y = this.y.target = 0
 
     map(this.medias, media => media.onResize(event, this.scroll))
   }
 
   onTouchDown ({ x, y }) {
-    this.speed.target = 1
-
     this.scrollCurrent.x = this.scroll.x
     this.scrollCurrent.y = this.scroll.y
   }
 
   onTouchMove ({ x, y }) {
-    const xDistance = x.start - x.end
     const yDistance = y.start - y.end
 
-    this.x.target = this.scrollCurrent.x - xDistance
     this.y.target = this.scrollCurrent.y - yDistance
   }
 
   onTouchUp ({ x, y }) {
-    this.speed.target = 0
+
   }
 
   onWheel ({ pixelX, pixelY }) {
-    this.x.target += pixelX
     this.y.target += pixelY
   }
 
@@ -134,16 +122,12 @@ export default class {
    * Update.
    */
   update () {
+    this.y.target += 1
+
+    this.speed.target = (this.y.target - this.y.current) * 0.001
     this.speed.current = GSAP.utils.interpolate(this.speed.current, this.speed.target, this.speed.lerp)
 
-    this.x.current = GSAP.utils.interpolate(this.x.current, this.x.target, this.x.lerp)
     this.y.current = GSAP.utils.interpolate(this.y.current, this.y.target, this.y.lerp)
-
-    if (this.scroll.x < this.x.current) {
-      this.x.direction = 'right'
-    } else if (this.scroll.x > this.x.current) {
-      this.x.direction = 'left'
-    }
 
     if (this.scroll.y < this.y.current) {
       this.y.direction = 'top'
@@ -151,32 +135,10 @@ export default class {
       this.y.direction = 'bottom'
     }
 
-    this.scroll.x = this.x.current
     this.scroll.y = this.y.current
 
     map(this.medias, (media, index) => {
-      const offsetX = this.sizes.width * 0.6
-      const scaleX = media.mesh.scale.x / 2
-
-      if (this.x.direction === 'left') {
-        const x = media.mesh.position.x + scaleX
-
-        if (x < -offsetX) {
-          media.extra.x += this.gallerySizes.width
-
-          media.mesh.rotation.z = GSAP.utils.random(-Math.PI * 0.03, Math.PI * 0.03)
-        }
-      } else if (this.x.direction === 'right') {
-        const x = media.mesh.position.x - scaleX
-
-        if (x > offsetX) {
-          media.extra.x -= this.gallerySizes.width
-
-          media.mesh.rotation.z = GSAP.utils.random(-Math.PI * 0.03, Math.PI * 0.03)
-        }
-      }
-
-      const offsetY = this.sizes.height * 0.6
+      const offsetY = this.sizes.height * 0.5
       const scaleY = media.mesh.scale.y / 2
 
       if (this.y.direction === 'top') {
@@ -184,16 +146,12 @@ export default class {
 
         if (y < -offsetY) {
           media.extra.y += this.gallerySizes.height
-
-          media.mesh.rotation.z = GSAP.utils.random(-Math.PI * 0.03, Math.PI * 0.03)
         }
       } else if (this.y.direction === 'bottom') {
         const y = media.mesh.position.y - scaleY
 
         if (y > offsetY) {
           media.extra.y -= this.gallerySizes.height
-
-          media.mesh.rotation.z = GSAP.utils.random(-Math.PI * 0.03, Math.PI * 0.03)
         }
       }
 

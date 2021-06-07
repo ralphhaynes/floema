@@ -1,40 +1,46 @@
-import Component from 'classes/Component'
+import AutoBind from 'auto-bind'
+import Prefix from 'prefix'
 
-export default class Animation extends Component {
+export default class {
   constructor ({ element, elements }) {
-    super({
-      element,
-      elements
-    })
+    AutoBind(this)
 
-    this.createObserver()
+    const { animationDelay, animationTarget } = element.dataset
 
-    this.animateOut()
+    this.delay = animationDelay
+
+    this.element = element
+    this.elements = elements
+
+    this.target = animationTarget ? element.closest(animationTarget) : element
+    this.transformPrefix = Prefix('transform')
+
+    this.isVisible = false
+
+    if ('IntersectionObserver' in window) {
+      this.createObserver()
+
+      this.animateOut()
+    } else {
+      this.animateIn()
+    }
   }
 
   createObserver () {
-    this.observer = new window.IntersectionObserver(entries => {
+    this.observer = new window.IntersectionObserver((entries) => {
       entries.forEach(entry => {
-        if (entry.isIntersecting) {
+        if (!this.isVisible && entry.isIntersecting) {
           this.animateIn()
-        } else {
-          this.animateOut()
         }
       })
-    })
-
-    this.observer.observe(this.element)
+    }).observe(this.target)
   }
 
   animateIn () {
-
+    this.isVisible = true
   }
 
   animateOut () {
-
-  }
-
-  onResize () {
-
+    this.isVisible = false
   }
 }

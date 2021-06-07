@@ -1,188 +1,289 @@
-import GSAP from 'gsap'
+import AutoBind from 'auto-bind'
+import EventEmitter from 'events'
 import Prefix from 'prefix'
 
-import each from 'lodash/each'
-import map from 'lodash/map'
-
-import Highlight from 'animations/Highlight'
-import Label from 'animations/Label'
+import Button from 'animations/Button'
+import Link from 'animations/Link'
+import Magnetic from 'animations/Magnetic'
+import Parallax from 'animations/Parallax'
 import Paragraph from 'animations/Paragraph'
-import Title from 'animations/Title'
+import Rotation from 'animations/Rotation'
+import Translate from 'animations/Translate'
 
 import AsyncLoad from 'classes/AsyncLoad'
-import { ColorsManager } from 'classes/Colors'
+import Detection from 'classes/Detection'
 
-export default class Page {
-  constructor ({
-    element,
-    elements,
-    id
-  }) {
-    this.selector = element
-    this.selectorChildren = {
-      ...elements,
+import each from 'lodash/each'
 
-      animationsHighlights: '[data-animation="highlight"]',
-      animationsLabels: '[data-animation="label"]',
-      animationsParagraphs: '[data-animation="paragraph"]',
-      animationsTitles: '[data-animation="title"]',
+import { mapEach } from 'utils/dom'
+import { clamp, lerp } from 'utils/math'
+import { split } from 'utils/text'
+export default class extends EventEmitter {
+  constructor ({ classes, element, elements, isScrollable = true }) {
+    super()
 
-      preloaders: '[data-src]'
+    AutoBind(this)
+
+    this.classes = {
+      ...classes
     }
 
-    this.id = id
+    this.selectors = {
+      element,
+      elements: {
+        preloaders: '[data-src]',
 
-    this.transformPrefix = Prefix('transform')
-  }
+        animationsButtons: '[data-animation="button"]',
+        animationsLinks: '[data-animation="link"]',
+        animationsMagnetics: '[data-animation="magnetic"]',
+        animationsParallaxes: '[data-animation="parallax"]',
+        animationsParagraphs: '[data-animation="paragraph"]',
+        animationsRotations: '[data-animation="rotation"]',
+        animationsTranslates: '[data-animation="translate"]',
 
-  create () {
-    this.element = document.querySelector(this.selector)
-    this.elements = {}
+        footer: '.footer',
+        footerCredits: '.footer__credits',
+
+        ...elements
+      }
+    }
 
     this.scroll = {
+      ease: 0.07,
+      position: 0,
       current: 0,
       target: 0,
-      last: 0,
       limit: 0
     }
 
-    each(this.selectorChildren, (entry, key) => {
-      if (entry instanceof window.HTMLElement || entry instanceof window.NodeList || Array.isArray(entry)) {
-        this.elements[key] = entry
+    this.isScrollable = isScrollable
+
+    this.transformPrefix = Prefix('transform')
+
+    this.create()
+  }
+
+  create () {
+    this.animations = []
+
+    this.element = document.querySelector(this.selectors.element)
+    this.elements = {}
+
+    each(this.selectors.elements, (selector, key) => {
+      if (selector instanceof window.HTMLElement || selector instanceof window.NodeList) {
+        this.elements[key] = selector
+      } else if (Array.isArray(selector)) {
+        this.elements[key] = selector
       } else {
-        this.elements[key] = document.querySelectorAll(entry)
+        this.elements[key] = this.element.querySelectorAll(selector)
 
         if (this.elements[key].length === 0) {
           this.elements[key] = null
         } else if (this.elements[key].length === 1) {
-          this.elements[key] = document.querySelector(entry)
+          this.elements[key] = this.element.querySelector(selector)
         }
       }
     })
 
+    if (this.isScrollable) {
+      this.scroll = {
+        ease: 0.07,
+        position: 0,
+        current: 0,
+        target: 0,
+        limit: this.elements.wrapper.clientHeight - window.innerHeight
+      }
+    }
+
     this.createAnimations()
-    this.createPrealoder()
+    this.createObserver()
+    this.createPreloaders()
   }
 
+  /**
+   * Animations.
+   */
   createAnimations () {
-    this.animations = []
-
-    // Highlights.
-    this.animationsHighlights = map(this.elements.animationsHighlights, element => {
-      return new Highlight({
+    /**
+     * Buttons.
+     */
+    this.animationsButtons = mapEach(this.elements.animationsButtons, (element, index) => {
+      return new Button({
         element
       })
     })
 
-    this.animations.push(...this.animationsHighlights)
+    this.animations.push(...this.animationsButtons)
 
-    // Titles.
-    this.animationsTitles = map(this.elements.animationsTitles, element => {
-      return new Title({
+    /**
+     * Links.
+     */
+    this.animationsLinks = mapEach(this.elements.animationsLinks, (element, index) => {
+      return new Link({
         element
       })
     })
 
-    this.animations.push(...this.animationsTitles)
+    this.animations.push(...this.animationsLinks)
 
-    // Paragraphs.
-    this.animationsParagraphs = map(this.elements.animationsParagraphs, element => {
-      return new Paragraph({
+    /**
+     * Magnetics.
+     */
+    this.animationsMagnetics = mapEach(this.elements.animationsMagnetics, (element, index) => {
+      return new Magnetic({
         element
       })
+    })
+
+    this.animations.push(...this.animationsMagnetics)
+
+    /**
+     * Parallaxes.
+     */
+    this.animationsParallaxes = mapEach(this.elements.animationsParallaxes, element => {
+      return new Parallax({ element })
+    })
+
+    this.animations.push(...this.animationsParallaxes)
+
+    /**
+     * Paragraphs.
+     */
+    this.animationsParagraphs = mapEach(this.elements.animationsParagraphs, element => {
+      return new Paragraph({ element })
     })
 
     this.animations.push(...this.animationsParagraphs)
 
-    // Labels.
-    this.animationsLabels = map(this.elements.animationsLabels, element => {
-      return new Label({
-        element
-      })
+    /**
+     * Rotations.
+     */
+    this.animationsRotations = mapEach(this.elements.animationsRotations, element => {
+      return new Rotation({ element })
     })
 
-    this.animations.push(...this.animationsLabels)
+    this.animations.push(...this.animationsRotations)
+
+    /**
+     * Translates.
+     */
+    this.animationsTranslates = mapEach(this.elements.animationsTranslates, element => {
+      return new Translate({ element })
+    })
+
+    this.animations.push(...this.animationsTranslates)
   }
 
-  createPrealoder () {
-    this.preloaders = map(this.elements.preloaders, element => {
-      return new AsyncLoad({ element })
+  /**
+   * Observer.
+   */
+  createObserver () {
+    this.observer = new window.ResizeObserver(entries => {
+      for (const entry of entries) { // eslint-disable-line
+        window.requestAnimationFrame(_ => {
+          this.scroll.limit = this.elements.wrapper.clientHeight - window.innerHeight
+        })
+      }
+    })
+
+    this.observer.observe(this.elements.wrapper)
+  }
+
+  /**
+   * Footer.
+   */
+  createPreloaders () {
+    this.preloaders = mapEach(this.elements.preloaders, element => {
+      return new AsyncLoad({
+        element
+      })
     })
   }
 
   /**
    * Animations.
    */
-  show (animation) {
-    return new Promise(resolve => {
-      ColorsManager.change({
-        backgroundColor: this.element.getAttribute('data-background'),
-        color: this.element.getAttribute('data-color')
-      })
-
-      if (animation) {
-        this.animationIn = animation
-      } else {
-        this.animationIn = GSAP.timeline()
-
-        this.animationIn.fromTo(this.element, {
-          autoAlpha: 0
-        }, {
-          autoAlpha: 1
-        })
-      }
-
-      this.animationIn.call(_ => {
-        this.addEventListeners()
-
-        resolve()
-      })
-    })
+  reset () {
+    this.scroll = {
+      ease: 0.07,
+      position: 0,
+      current: 0,
+      target: 0,
+      limit: 0
+    }
   }
 
-  hide () {
-    return new Promise(resolve => {
-      this.destroy()
+  set (value) {
+    this.scroll.current = this.scroll.target = this.scroll.last = value
 
-      this.animationOut = GSAP.timeline()
+    this.transform(this.elements.wrapper, this.scroll.current)
+  }
 
-      this.animationOut.to(this.element, {
-        autoAlpha: 0,
-        onComplete: resolve
-      })
-    })
+  show (url) {
+    this.isVisible = true
+
+    this.addEventListeners()
+
+    return Promise.resolve()
+  }
+
+  hide (url) {
+    this.isVisible = false
+
+    this.removeEventListeners()
+
+    return Promise.resolve()
+  }
+
+  transform (element, y) {
+    element.style[this.transformPrefix] = `translate3d(0, ${-Math.round(y)}px, 0)`
   }
 
   /**
    * Events.
    */
   onResize () {
-    if (this.elements.wrapper) {
+    if (!this.elements.wrapper) return
+
+    window.requestAnimationFrame(_ => {
       this.scroll.limit = this.elements.wrapper.clientHeight - window.innerHeight
-    }
 
-    each(this.animations, animation => animation.onResize())
+      each(this.animations, animation => {
+        animation.onResize && animation.onResize()
+      })
+    })
   }
 
-  onWheel ({ pixelY }) {
-    this.scroll.target += pixelY
+  onTouchDown (event) {
+    if (!Detection.isPhone()) return
+
+    this.isDown = true
+
+    this.scroll.position = this.scroll.current
+    this.start = event.touches ? event.touches[0].clientY : event.clientY
   }
 
-  /**
-   * Loop.
-   */
-  update () {
-    this.scroll.target = GSAP.utils.clamp(0, this.scroll.limit, this.scroll.target)
+  onTouchMove (event) {
+    if (!Detection.isPhone() || !this.isDown) return
 
-    this.scroll.current = GSAP.utils.interpolate(this.scroll.current, this.scroll.target, 0.1)
+    const y = event.touches ? event.touches[0].clientY : event.clientY
+    const distance = (this.start - y) * 3
 
-    if (this.scroll.current < 0.01) {
-      this.scroll.current = 0
-    }
+    this.scroll.target = this.scroll.position + distance
+  }
 
-    if (this.elements.wrapper) {
-      this.elements.wrapper.style[this.transformPrefix] = `translateY(-${this.scroll.current}px)`
-    }
+  onTouchUp (event) {
+    if (!Detection.isPhone()) return
+
+    this.isDown = false
+  }
+
+  onWheel (normalized) {
+    const speed = normalized.pixelY
+
+    this.scroll.target += speed
+
+    return speed
   }
 
   /**
@@ -197,9 +298,26 @@ export default class Page {
   }
 
   /**
-   * Destroy.
+   * Frames.
    */
-  destroy () {
-    this.removeEventListeners()
+  update () {
+    this.scroll.target = clamp(0, this.scroll.limit, this.scroll.target)
+
+    this.scroll.current = lerp(this.scroll.current, this.scroll.target, this.scroll.ease)
+    this.scroll.current = Math.floor(this.scroll.current)
+
+    if (this.scroll.current < 0.1) {
+      this.scroll.current = 0
+    }
+
+    if (this.elements.wrapper) {
+      this.transform(this.elements.wrapper, this.scroll.current)
+    }
+
+    each(this.animations, animation => {
+      animation.update && animation.update(this.scroll)
+    })
+
+    this.scroll.last = this.scroll.current
   }
 }

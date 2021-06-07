@@ -7,10 +7,18 @@
   overflow: hidden;
   text-align: center;
 
+  &--active {
+    @extend %page--active;
+  }
+}
+
+.home__wrapper {
+  @extend %cover;
+
   &:before,
   &:after {
     content: '';
-    height: 24rem;
+    height: 35rem;
     left: 0;
     position: absolute;
     width: 100%;
@@ -18,18 +26,14 @@
   }
 
   &:before {
-    background: linear-gradient(to bottom, $color-contessa 0%, rgba($color-contessa, 0) 100%);
+    background: linear-gradient(to bottom, $color-contessa 15%, rgba($color-contessa, 0) 100%);
     top: 0;
   }
 
   &:after {
-    background: linear-gradient(to top, $color-contessa 0%, rgba($color-contessa, 0) 100%);
+    background: linear-gradient(to top, $color-contessa 15%, rgba($color-contessa, 0) 100%);
     bottom: 0;
   }
-}
-
-.home__wrapper {
-
 }
 
 .home__titles {
@@ -40,14 +44,24 @@
   @extend %vertical-titles__label;
 }
 
+.home__titles__label__text {
+  @extend %vertical-titles__label__text;
+}
+
 .home__titles__title {
   @extend %vertical-titles__title;
 }
 
-.home__gallery {
-  @extend %cover;
+.home__titles__title__text {
+  @extend %vertical-titles__title__text;
+}
 
+.home__gallery {
   height: 172.5rem;
+  left: 50%;
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
   width: 241.8rem + 9rem;
   visibility: hidden;
 }
@@ -182,6 +196,13 @@
   transform: translateX(-50%);
   width: 28.8rem;
   z-index: 2;
+
+  span {
+    display: inline-block;
+    line-height: 1;
+    position: relative;
+    vertical-align: middle;
+  }
 
   @include media('<phone') {
     bottom: 7.5rem;

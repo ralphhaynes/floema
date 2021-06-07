@@ -9,12 +9,12 @@ import Preloader from 'components/Preloader'
 
 import About from 'pages/About'
 import Collections from 'pages/Collections'
-import Detail from 'pages/Detail'
+import Details from 'pages/Details'
 import Home from 'pages/Home'
 
 class App {
   constructor () {
-    this.createContent()
+    this.template = window.location.pathname
 
     this.createCanvas()
     this.createPreloader()
@@ -49,21 +49,28 @@ class App {
     })
   }
 
-  createContent () {
-    this.content = document.querySelector('.content')
-    this.template = this.content.getAttribute('data-template')
-  }
-
   createPages () {
+    this.about = new About()
+    this.collections = new Collections()
+    // this.details = new Details()
+    this.home = new Home()
+
     this.pages = {
-      about: new About(),
-      collections: new Collections(),
-      detail: new Detail(),
-      home: new Home()
+      '/': this.home,
+      '/about': this.about,
+      '/collections': this.collections,
+    //   '/detail': this.details
     }
 
-    this.page = this.pages[this.template]
-    this.page.create()
+    // console.log(this.template)
+
+    console.log(this.template)
+
+    // if (this.template.indexOf('/detail') > -1) {
+    //   this.page = this.case
+    // } else {
+      this.page = this.pages[this.template]
+    // }
   }
 
   /**
@@ -89,40 +96,23 @@ class App {
 
     await this.page.hide()
 
-    const request = await window.fetch(url)
-
-    if (request.status === 200) {
-      const html = await request.text()
-      const div = document.createElement('div')
-
-      if (push) {
-        window.history.pushState({}, '', url)
-      }
-
-      div.innerHTML = html
-
-      const divContent = div.querySelector('.content')
-
-      this.template = divContent.getAttribute('data-template')
-
-      this.navigation.onChange(this.template)
-
-      this.content.setAttribute('data-template', this.template)
-      this.content.innerHTML = divContent.innerHTML
-
-      this.canvas.onChangeEnd(this.template)
-
-      this.page = this.pages[this.template]
-      this.page.create()
-
-      this.onResize()
-
-      this.page.show()
-
-      this.addLinkListeners()
-    } else {
-      this.onChange({ ur: '/' })
+    if (push) {
+      window.history.pushState({}, '', url)
     }
+
+    this.template = window.location.pathname
+
+    console.log(this.template)
+
+    this.navigation.onChange(this.template)
+
+    this.canvas.onChangeEnd(this.template)
+
+    this.page = this.pages[this.template]
+
+    this.onResize()
+
+    this.page.show()
   }
 
   onResize () {
@@ -141,17 +131,29 @@ class App {
     if (this.canvas && this.canvas.onTouchDown) {
       this.canvas.onTouchDown(event)
     }
+
+    if (this.page && this.page.onTouchDown) {
+      this.page.onTouchDown(event)
+    }
   }
 
   onTouchMove (event) {
     if (this.canvas && this.canvas.onTouchMove) {
       this.canvas.onTouchMove(event)
     }
+
+    if (this.page && this.page.onTouchDown) {
+      this.page.onTouchMove(event)
+    }
   }
 
   onTouchUp (event) {
     if (this.canvas && this.canvas.onTouchUp) {
       this.canvas.onTouchUp(event)
+    }
+
+    if (this.page && this.page.onTouchDown) {
+      this.page.onTouchUp(event)
     }
   }
 

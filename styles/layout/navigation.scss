@@ -46,8 +46,7 @@
 
 .navigation__list__link {
   @extend %link--hidden;
-  @extend %title-20;
+  @extend %title-24;
 
   display: block;
-  line-height: 1;
 }

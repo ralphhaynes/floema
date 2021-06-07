@@ -1,22 +1,30 @@
 import GSAP from 'gsap'
-import { Mesh, Program } from 'ogl'
+import { Mesh, Program, Transform } from 'ogl'
+
+import Component from 'classes/Component'
 
 import fragment from 'shaders/collections-fragment.glsl'
 import vertex from 'shaders/collections-vertex.glsl'
 
-export default class {
-  constructor ({ element, geometry, gl, index, scene, sizes }) {
-    this.element = element
+export default class extends Component {
+  constructor ({ detail, element, geometry, gl, index, scene, sizes }) {
+    super({
+      element,
+      elements: {
+        image: '.collections__gallery__media__image'
+      }
+    })
+
+    this.detail = detail
     this.geometry = geometry
     this.gl = gl
     this.index = index
     this.scene = scene
     this.sizes = sizes
 
-    this.extra = {
-      x: 0,
-      y: 0
-    }
+    this.animation = 0
+    this.group = new Transform()
+    this.frame = 0
 
     this.opacity = {
       current: 0,
@@ -25,44 +33,71 @@ export default class {
       multiplier: 0
     }
 
-    this.createTexture()
-    this.createProgram()
-    this.createMesh()
+    this.createDetail()
+    this.createJewlery()
+    this.createModel()
+
     this.createBounds({
       sizes: this.sizes
     })
+
+    this.original = (-this.sizes.width / 2) + (this.jewlery.scale.x / 2) + (this.x * this.sizes.width)
+
+    this.group.setParent(this.scene)
   }
 
-  createTexture () {
-    const image = this.element.querySelector('.collections__gallery__media__image')
+  createDetail () {
+    this.detailMedia = this.detail.querySelector('.detail__media')
 
-    this.texture = window.TEXTURES[image.getAttribute('data-src')]
+    this.detailClose = this.detail.querySelector('.detail__button')
+    this.detailClose.addEventListener('click', this.animateOut)
   }
 
-  createProgram () {
-    this.program = new Program(this.gl, {
+  createJewlery () {
+    const program = new Program(this.gl, {
       fragment,
       vertex,
       uniforms: {
         uAlpha: { value: 0 },
-        tMap: { value: this.texture }
+        tMap: { value: window.TEXTURES[this.elements.image.getAttribute('data-src')] }
       }
     })
-  }
 
-  createMesh () {
-    this.mesh = new Mesh(this.gl, {
+    this.jewlery = new Mesh(this.gl, {
       geometry: this.geometry,
-      program: this.program
+      program
     })
 
-    this.mesh.setParent(this.scene)
+    this.jewlery.index = this.index
+
+    this.jewlery.setParent(this.group)
+  }
+
+  createModel () {
+    const program = new Program(this.gl, {
+      fragment,
+      vertex,
+      uniforms: {
+        uAlpha: { value: 0 },
+        tMap: { value: window.TEXTURES[this.elements.image.getAttribute('data-model-src')] }
+      }
+    })
+
+    this.model = new Mesh(this.gl, {
+      geometry: this.geometry,
+      program
+    })
+
+    this.model.rotation.y = Math.PI
+
+    this.model.setParent(this.group)
   }
 
   createBounds ({ sizes }) {
     this.sizes = sizes
 
-    this.bounds = this.element.getBoundingClientRect()
+    this.collectionsBounds = this.element.getBoundingClientRect()
+    this.detailBounds = this.detailMedia.getBoundingClientRect()
 
     this.updateScale()
     this.updateX()
@@ -89,44 +124,88 @@ export default class {
    * Events.
    */
   onResize (sizes, scroll) {
-    this.extra = {
-      x: 0,
-      y: 0
-    }
-
     this.createBounds(sizes)
     this.updateX(scroll && scroll.x)
+  }
+
+  /**
+   * Animations.
+   */
+  animateIn () {
+    GSAP.to(this, {
+      animation: 1,
+      duration: 2,
+      ease: 'expo.inOut'
+    })
+
+    this.detail.classList.add('detail--active')
+
+    this.emit('open')
+  }
+
+  animateOut () {
+    GSAP.to(this, {
+      animation: 0,
+      duration: 2,
+      ease: 'expo.inOut'
+    })
+
+    this.detail.classList.remove('detail--active')
+
+    this.emit('close')
   }
 
   /**
    * Loop.
    */
   updateScale () {
-    this.height = this.bounds.height / window.innerHeight
-    this.width = this.bounds.width / window.innerWidth
+    const height = GSAP.utils.interpolate(this.collectionsBounds.height, this.detailBounds.height, this.animation)
+    const width = GSAP.utils.interpolate(this.collectionsBounds.width, this.detailBounds.width, this.animation)
 
-    this.mesh.scale.x = this.sizes.width * this.width
-    this.mesh.scale.y = this.sizes.height * this.height
+    this.height = height / window.innerHeight
+    this.width = width / window.innerWidth
+
+    this.jewlery.scale.x = this.sizes.width * this.width
+    this.jewlery.scale.y = this.sizes.height * this.height
+
+    this.model.scale.x = this.sizes.width * this.width
+    this.model.scale.y = this.sizes.height * this.height
   }
 
-  updateX (x = 0) {
-    this.x = (this.bounds.left + x) / window.innerWidth
+  updateX (scroll = 0) {
+    const x = GSAP.utils.interpolate(this.collectionsBounds.left + scroll, this.detailBounds.left, this.animation)
 
-    this.mesh.position.x = (-this.sizes.width / 2) + (this.mesh.scale.x / 2) + (this.x * this.sizes.width) + this.extra.x
+    this.x = x / window.innerWidth
+
+    this.group.position.x = (-this.sizes.width / 2) + (this.jewlery.scale.x / 2) + (this.x * this.sizes.width)
+    this.group.position.z = GSAP.utils.interpolate(0, 0.1, this.animation)
+
+    this.group.rotation.y = GSAP.utils.interpolate(0, 2 * Math.PI, this.animation)
   }
 
   update (scroll, index) {
+    this.updateScale()
     this.updateX(scroll)
 
-    const amplitude = 0.1
-    const frequency = 1
+    const frequency = 500
+    const amplitude = 0.5
 
-    this.mesh.rotation.z = -0.02 * Math.PI * Math.sin(this.index / frequency)
-    this.mesh.position.y = amplitude * Math.sin(this.index / frequency)
+    const sliderY = Math.sin((this.original / 10 * (Math.PI * 2)) + this.frame / frequency) * amplitude
+    const detailY = 0
+
+    this.group.position.y = GSAP.utils.interpolate(sliderY, detailY, this.animation)
+
+    const sliderZ = GSAP.utils.mapRange(-this.sizes.width * 0.5, this.sizes.width * 0.5, this.group.position.y * 0.2, -this.group.position.y * 0.2, this.group.position.x)
+    const detailZ = Math.PI * 0.01
+
+    this.group.rotation.z = GSAP.utils.interpolate(sliderZ, detailZ, this.animation)
 
     this.opacity.target = index === this.index ? 1 : 0.4
     this.opacity.current = GSAP.utils.interpolate(this.opacity.current, this.opacity.target, this.opacity.lerp)
 
-    this.program.uniforms.uAlpha.value = this.opacity.multiplier * this.opacity.current
+    this.jewlery.program.uniforms.uAlpha.value = this.opacity.multiplier * this.opacity.current
+    this.model.program.uniforms.uAlpha.value = this.opacity.multiplier * this.opacity.current
+
+    this.frame += 1
   }
 }

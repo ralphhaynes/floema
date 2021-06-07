@@ -3,6 +3,10 @@
 
   // background: $color-cadet-blue;
   // color: $color-bright-gray;
+
+  &--active {
+    @extend %page--active;
+  }
 }
 
 .about__wrapper {
@@ -10,10 +14,10 @@
 }
 
 .about__title {
-  @extend %title-100;
+  @extend %title-110;
 
   margin: auto;
-  max-width: 126rem;
+  max-width: 140rem;
   text-align: center;
 
   @include media('<phone') {

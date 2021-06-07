@@ -6,4 +6,5 @@ nav.navigation
   ul.navigation__list
     each item in navigation.data.list
       li.navigation__list__item
-        a.navigation__list__link(href=Link(item.link))=item.text
+        a.navigation__list__link(data-animation="link" href=Link(item.link))
+          span=item.text

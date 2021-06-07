@@ -1,9 +1,13 @@
 .collections {
   @extend %page;
 
-  z-index: 0;
   // background: $color-quicksand;
   // color: $color-quarter-spanish-white;
+  z-index: 0;
+
+  &--active {
+    @extend %page--active;
+  }
 }
 
 .collections__wrapper {
@@ -33,6 +37,7 @@
 .collections__gallery {
   @extend %cover;
 
+  visibility: hidden;
   z-index: 1;
 }
 
@@ -59,10 +64,10 @@
 }
 
 .collections__gallery__media {
-  height: 63.1rem;
+  height: 63.1rem * 0.8;
   position: relative;
   visibility: hidden;
-  width: 44.7rem;
+  width: 44.7rem * 0.8;
 }
 
 .collections__gallery__media__image {
@@ -97,7 +102,7 @@
 }
 
 .collections__article__description {
-  @extend %description-16;
+  @extend %description-18;
 
   max-width: 44rem;
 }
