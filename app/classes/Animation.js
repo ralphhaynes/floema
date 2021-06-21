@@ -31,6 +31,8 @@ export default class {
       entries.forEach(entry => {
         if (!this.isVisible && entry.isIntersecting) {
           this.animateIn()
+        } else {
+          this.animateOut()
         }
       })
     }).observe(this.target)

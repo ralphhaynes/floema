@@ -1,12 +1,8 @@
-import GSAP from 'gsap'
 import { Camera, Renderer, Transform } from 'ogl'
 
 import About from './About'
 import Collections from './Collections'
-import Details from './Details'
 import Home from './Home'
-
-import Transition from './Transition'
 
 export default class Canvas {
   constructor ({ template }) {
@@ -88,78 +84,33 @@ export default class Canvas {
   }
 
   /**
-   * Detail.
-   */
-  createDetail () {
-    // this.detail = new Details({
-    //   gl: this.gl,
-    //   scene: this.scene,
-    //   sizes: this.sizes,
-    //   transition: this.transition
-    // })
-  }
-
-  /**
    * Events.
    */
   onPreloaded () {
     this.createAbout()
     this.createCollections()
-    this.createDetail()
     this.createHome()
 
-    this.onChangeEnd(this.template)
+    this.onChange(this.template, true)
   }
 
-  onChangeStart (template, url) {
-    if (this.about) {
+  onChange (template, isPreloaded) {
+    if (template === '/about') {
+      this.about.show(isPreloaded)
+    } else {
       this.about.hide()
     }
 
-    if (this.collections) {
+    if (template === '/collections') {
+      this.collections.show(isPreloaded)
+    } else {
       this.collections.hide()
     }
 
-    if (this.detail) {
-      this.detail.hide()
-    }
-
-    if (this.home) {
-      this.home.hide()
-    }
-
-    this.isFromCollectionsToDetail = this.template === 'collections' && url.indexOf('details') > -1
-    this.isFromDetailToCollections = this.template === 'details' && url.indexOf('collections') > -1
-
-    if (this.isFromCollectionsToDetail || this.isFromDetailToCollections) {
-      this.transition = new Transition({
-        gl: this.gl,
-        scene: this.scene,
-        sizes: this.sizes,
-        url
-      })
-
-      this.transition.setElement(this.collections || this.detail)
-    }
-  }
-
-  onChangeEnd (template) {
-    console.log(template)
-
-    if (template === '/about') {
-      this.about.show()
-    }
-
-    if (template === '/collections') {
-      this.collections.show()
-    }
-
-    if (template === '/details') {
-      this.detail.show()
-    }
-
     if (template === '/') {
-      this.home.show()
+      this.home.show(isPreloaded)
+    } else {
+      this.home.hide()
     }
 
     this.template = template
@@ -193,10 +144,6 @@ export default class Canvas {
       this.collections.onResize(values)
     }
 
-    if (this.detail) {
-      this.detail.onResize(values)
-    }
-
     if (this.home) {
       this.home.onResize(values)
     }
@@ -210,7 +157,7 @@ export default class Canvas {
 
     const values = {
       x: this.x,
-      y: this.y,
+      y: this.y
     }
 
     if (this.about) {
@@ -221,18 +168,12 @@ export default class Canvas {
       this.collections.onTouchDown(values)
     }
 
-    if (this.detail) {
-      this.detail.onTouchDown(values)
-    }
-
     if (this.home) {
       this.home.onTouchDown(values)
     }
   }
 
   onTouchMove (event) {
-    if (!this.isDown) return
-
     const x = event.touches ? event.touches[0].clientX : event.clientX
     const y = event.touches ? event.touches[0].clientY : event.clientY
 
@@ -241,19 +182,17 @@ export default class Canvas {
 
     const values = {
       x: this.x,
-      y: this.y,
+      y: this.y
     }
 
     if (this.collections) {
       this.collections.onTouchMove(values)
     }
 
+    if (!this.isDown) return
+
     if (this.about) {
       this.about.onTouchMove(values)
-    }
-
-    if (this.detail) {
-      this.detail.onTouchMove(values)
     }
 
     if (this.home) {
@@ -272,7 +211,7 @@ export default class Canvas {
 
     const values = {
       x: this.x,
-      y: this.y,
+      y: this.y
     }
 
     if (this.about) {
@@ -281,10 +220,6 @@ export default class Canvas {
 
     if (this.collections) {
       this.collections.onTouchUp(values)
-    }
-
-    if (this.detail) {
-      this.detail.onTouchUp(values)
     }
 
     if (this.home) {
@@ -312,10 +247,6 @@ export default class Canvas {
 
     if (this.collections) {
       this.collections.update()
-    }
-
-    if (this.detail) {
-      this.detail.update()
     }
 
     if (this.home) {

@@ -5,9 +5,8 @@ import each from 'lodash/each'
 
 import Component from 'classes/Component'
 
-import { BREAKPOINT_PHONE } from 'utils/breakpoints'
 import { DEFAULT as ease } from 'utils/easings'
-import { calculate, split } from 'utils/text'
+import { split } from 'utils/text'
 
 export default class Preloader extends Component {
   constructor ({ canvas }) {
@@ -24,22 +23,18 @@ export default class Preloader extends Component {
 
     window.TEXTURES = {}
 
-    const spans = split({
-      append: false,
+    this.elements.titleSpans = split({
+      append: true,
       element: this.elements.title,
-      expression: ' '
+      expression: '<br>'
     })
 
-    this.elements.titleSpans = []
-
-    each(spans, element => {
-      const spans = split({
-        append: true,
+    each(this.elements.titleSpans, element => {
+      split({
+        append: false,
         element,
-        expression: ' '
+        expression: ''
       })
-
-      this.elements.titleSpans.push(...spans)
     })
 
     this.length = 0
@@ -48,22 +43,62 @@ export default class Preloader extends Component {
   }
 
   createLoader () {
-    window.ASSETS.forEach(image => {
-      const texture = new Texture(this.canvas.gl, {
-        generateMipmaps: false
-      })
+    this.animateIn = GSAP.timeline()
 
-      const media = new window.Image()
+    this.animateIn.set(this.elements.title, {
+      autoAlpha: 1
+    })
 
-      media.crossOrigin = 'anonymous'
-      media.src = image
-      media.onload = _ => {
-        texture.image = media
+    each(this.elements.titleSpans, (line, index) => {
+      const letters = line.querySelectorAll('span')
 
-        this.onAssetLoaded()
+      const onStart = _ => {
+        GSAP.fromTo(letters, {
+          autoAlpha: 0,
+          display: 'inline-block',
+          y: '100%'
+        }, {
+          autoAlpha: 1,
+          delay: 0.2,
+          display: 'inline-block',
+          duration: 1,
+          ease: 'back.inOut',
+          stagger: 0.015,
+          y: '0%'
+        })
       }
 
-      window.TEXTURES[image] = texture
+      this.animateIn.fromTo(line, {
+        autoAlpha: 0,
+        y: '100%'
+      }, {
+        autoAlpha: 1,
+        delay: 0.2 * index,
+        duration: 1.5,
+        onStart,
+        ease: 'expo.inOut',
+        y: '0%'
+      }, 'start')
+    })
+
+    this.animateIn.call(_ => {
+      window.ASSETS.forEach(image => {
+        const texture = new Texture(this.canvas.gl, {
+          generateMipmaps: false
+        })
+
+        const media = new window.Image()
+
+        media.crossOrigin = 'anonymous'
+        media.src = image
+        media.onload = _ => {
+          texture.image = media
+
+          this.onAssetLoaded()
+        }
+
+        window.TEXTURES[image] = texture
+      })
     })
   }
 
@@ -87,23 +122,35 @@ export default class Preloader extends Component {
         delay: 1
       })
 
-      const lines = calculate(this.elements.titleSpans)
+      each(this.elements.titleSpans, (line, index) => {
+        const letters = line.querySelectorAll('span')
 
-      lines.forEach((line, index) => {
+        const onStart = _ => {
+          GSAP.to(letters, {
+            autoAlpha: 0,
+            delay: 0.2,
+            display: 'inline-block',
+            duration: 1,
+            ease: 'back.inOut',
+            stagger: 0.015,
+            y: '-100%'
+          })
+        }
+
         this.animateOut.to(line, {
           autoAlpha: 0,
           delay: 0.2 * index,
           duration: 1.5,
+          onStart,
           ease: 'expo.inOut',
-          y: -25
+          y: '-100%'
         }, 'start')
       })
 
       this.animateOut.to(this.elements.numberText, {
+        autoAlpha: 0,
         duration: 1,
-        ease,
-        stagger: 0.1,
-        y: '100%'
+        ease
       }, 'start')
 
       this.animateOut.to(this.element, {

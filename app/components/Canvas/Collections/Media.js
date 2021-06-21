@@ -6,6 +6,8 @@ import Component from 'classes/Component'
 import fragment from 'shaders/collections-fragment.glsl'
 import vertex from 'shaders/collections-vertex.glsl'
 
+import MediaDOM from './MediaDOM'
+
 export default class extends Component {
   constructor ({ detail, element, geometry, gl, index, scene, sizes }) {
     super({
@@ -47,10 +49,11 @@ export default class extends Component {
   }
 
   createDetail () {
-    this.detailMedia = this.detail.querySelector('.detail__media')
+    this.detailDOM = new MediaDOM({
+      element: this.detail
+    })
 
-    this.detailClose = this.detail.querySelector('.detail__button')
-    this.detailClose.addEventListener('click', this.animateOut)
+    this.detailDOM.on('close', this.animateOut.bind(this))
   }
 
   createJewlery () {
@@ -97,7 +100,6 @@ export default class extends Component {
     this.sizes = sizes
 
     this.collectionsBounds = this.element.getBoundingClientRect()
-    this.detailBounds = this.detailMedia.getBoundingClientRect()
 
     this.updateScale()
     this.updateX()
@@ -107,9 +109,8 @@ export default class extends Component {
    * Animations.
    */
   show () {
-    GSAP.fromTo(this.opacity, {
-      multiplier: 0
-    }, {
+    GSAP.to(this.opacity, {
+      delay: 0.5,
       multiplier: 1
     })
   }
@@ -118,12 +119,16 @@ export default class extends Component {
     GSAP.to(this.opacity, {
       multiplier: 0
     })
+
+    this.detailDOM.animateOut()
   }
 
   /**
    * Events.
    */
   onResize (sizes, scroll) {
+    this.detailDOM.onResize()
+
     this.createBounds(sizes)
     this.updateX(scroll && scroll.x)
   }
@@ -138,9 +143,9 @@ export default class extends Component {
       ease: 'expo.inOut'
     })
 
-    this.detail.classList.add('detail--active')
+    this.detailDOM.animateIn()
 
-    this.emit('open')
+    this.emit('open', this.index)
   }
 
   animateOut () {
@@ -150,17 +155,17 @@ export default class extends Component {
       ease: 'expo.inOut'
     })
 
-    this.detail.classList.remove('detail--active')
+    this.detailDOM.animateOut()
 
-    this.emit('close')
+    this.emit('close', this.index)
   }
 
   /**
    * Loop.
    */
   updateScale () {
-    const height = GSAP.utils.interpolate(this.collectionsBounds.height, this.detailBounds.height, this.animation)
-    const width = GSAP.utils.interpolate(this.collectionsBounds.width, this.detailBounds.width, this.animation)
+    const height = GSAP.utils.interpolate(this.collectionsBounds.height, this.detailDOM.bounds.height, this.animation)
+    const width = GSAP.utils.interpolate(this.collectionsBounds.width, this.detailDOM.bounds.width, this.animation)
 
     this.height = height / window.innerHeight
     this.width = width / window.innerWidth
@@ -173,7 +178,7 @@ export default class extends Component {
   }
 
   updateX (scroll = 0) {
-    const x = GSAP.utils.interpolate(this.collectionsBounds.left + scroll, this.detailBounds.left, this.animation)
+    const x = GSAP.utils.interpolate(this.collectionsBounds.left + scroll, this.detailDOM.bounds.left, this.animation)
 
     this.x = x / window.innerWidth
 
@@ -193,9 +198,23 @@ export default class extends Component {
     const sliderY = Math.sin((this.original / 10 * (Math.PI * 2)) + this.frame / frequency) * amplitude
     const detailY = 0
 
+    if (this.animation > 0.01) {
+      this.jewlery.program.depthTest = false
+      this.jewlery.program.depthWrite = false
+
+      this.model.program.depthTest = false
+      this.model.program.depthWrite = false
+    } else {
+      this.jewlery.program.depthTest = true
+      this.jewlery.program.depthWrite = true
+
+      this.model.program.depthTest = true
+      this.model.program.depthWrite = true
+    }
+
     this.group.position.y = GSAP.utils.interpolate(sliderY, detailY, this.animation)
 
-    const sliderZ = GSAP.utils.mapRange(-this.sizes.width * 0.5, this.sizes.width * 0.5, this.group.position.y * 0.2, -this.group.position.y * 0.2, this.group.position.x)
+    const sliderZ = GSAP.utils.mapRange(-this.sizes.width * 0.25, this.sizes.width * 0.25, this.group.position.y * 0.3, -this.group.position.y * 0.3, this.group.position.x)
     const detailZ = Math.PI * 0.01
 
     this.group.rotation.z = GSAP.utils.interpolate(sliderZ, detailZ, this.animation)

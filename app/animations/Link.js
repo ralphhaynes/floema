@@ -57,7 +57,7 @@ export default class extends Animation {
       duration: 0.5,
       ease,
       transform: 'rotate3d(1, 0.2, 0, -90deg)',
-      stagger: 0.01
+      stagger: 0.02
     }, 0)
 
     this.timeline.fromTo(this.elements.hoverSpans, {
@@ -66,7 +66,7 @@ export default class extends Animation {
       duration: 0.5,
       ease,
       transform: 'rotate3d(0, 0, 0, 90deg)',
-      stagger: 0.01
+      stagger: 0.02
     }, 0.05)
 
     this.animateOut()

@@ -1,5 +1,6 @@
 import AutoBind from 'auto-bind'
 import EventEmitter from 'events'
+import GSAP from 'gsap'
 import Prefix from 'prefix'
 
 import Button from 'animations/Button'
@@ -220,9 +221,16 @@ export default class extends EventEmitter {
   }
 
   show (url) {
+    this.reset()
+
     this.isVisible = true
 
     this.addEventListeners()
+
+    GSAP.set(document.documentElement, {
+      backgroundColor: this.element.getAttribute('data-background'),
+      color: this.element.getAttribute('data-color')
+    })
 
     return Promise.resolve()
   }

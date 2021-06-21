@@ -9,9 +9,10 @@
           .home__titles__title__text=collection.data.title
 
     .home__gallery
-      each media in home.data.gallery
-        figure.home__gallery__media
-          img.home__gallery__media__image(alt=media.image.alt data-src=media.image.url)
+      each rows in [0, 1]
+        each media, index in home.data.gallery
+          figure.home__gallery__media(class=`home__gallery__media--${index % 5 + 1}`)
+            img.home__gallery__media__image(alt=media.image.alt data-src=media.image.url)
 
     a.home__link(data-animation="button" href=Link(home.data.collections))
       span=home.data.button

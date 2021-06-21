@@ -77,7 +77,7 @@ const handleRequest = async api => {
     fetchLinks: 'product.image, product.model'
   })
 
-  const { results: products } = await api.query(Prismic.Predicates.at('document.type', 'product'), {
+  const { results: productsData } = await api.query(Prismic.Predicates.at('document.type', 'product'), {
     fetchLinks: 'collection.title',
     pageSize: 100
   })
@@ -89,6 +89,14 @@ const handleRequest = async api => {
     const data = find(collectionsData, { uid })
 
     return data
+  })
+
+  const products = []
+
+  collections.forEach(collection => {
+    collection.data.products.forEach(({ products_product: { uid } }) => {
+      products.push(find(productsData, { uid }))
+    })
   })
 
   const assets = []
@@ -115,8 +123,6 @@ const handleRequest = async api => {
       assets.push(item.products_product.data.model.url)
     })
   })
-
-  console.log(products)
 
   return {
     about,

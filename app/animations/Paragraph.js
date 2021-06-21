@@ -2,6 +2,7 @@ import each from 'lodash/each'
 
 import Animation from 'classes/Animation'
 
+import { CSS } from 'utils/easings'
 import { calculate, split } from 'utils/text'
 
 export default class extends Animation {
@@ -42,7 +43,7 @@ export default class extends Animation {
 
     each(this.lines, (line, lineIndex) => {
       each(line, word => {
-        word.style.transition = `transform 1.5s ${lineIndex * 0.1}s ease`
+        word.style.transition = `transform 1.5s ${lineIndex * 0.1}s ${CSS}`
         word.style[this.transformPrefix] = 'translateY(0)'
       })
     })

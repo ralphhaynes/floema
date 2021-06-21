@@ -44,3 +44,8 @@
             each media in section.items
               figure.about__gallery__media
                 img.about__gallery__media__image(alt=media.image.alt data-src=media.image.url)
+
+    footer.about__footer
+      .about__footer__copyright!=about.data.footer_copyright
+
+      .about__footer__credits!=PrismicDOM.RichText.asHtml(about.data.footer_credits)

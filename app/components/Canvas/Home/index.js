@@ -38,6 +38,8 @@ export default class {
       lerp: 0.1
     }
 
+    this.velocity = 2
+
     this.createGeometry()
     this.createGallery()
 
@@ -69,10 +71,10 @@ export default class {
   /**
    * Animations.
    */
-  show () {
+  show (isPreloaded) {
     this.group.setParent(this.scene)
 
-    map(this.medias, media => media.show())
+    map(this.medias, media => media.show(isPreloaded))
   }
 
   hide () {
@@ -116,13 +118,15 @@ export default class {
 
   onWheel ({ pixelX, pixelY }) {
     this.y.target += pixelY
+
+    this.velocity = pixelY > 0 ? 2 : -2
   }
 
   /**
    * Update.
    */
   update () {
-    this.y.target += 1
+    this.y.target += this.velocity
 
     this.speed.target = (this.y.target - this.y.current) * 0.001
     this.speed.current = GSAP.utils.interpolate(this.speed.current, this.speed.target, this.speed.lerp)

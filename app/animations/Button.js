@@ -66,8 +66,6 @@ export default class Button extends Component {
   }
 
   createPath () {
-    console.log(this.element)
-
     this.path = this.element.querySelector('path:last-child')
     this.pathLength = this.path.getTotalLength()
     this.pathValue = this.pathLength

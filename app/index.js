@@ -3,9 +3,9 @@ import NormalizeWheel from 'normalize-wheel'
 import each from 'lodash/each'
 
 import Canvas from 'components/Canvas'
-
 import Navigation from 'components/Navigation'
 import Preloader from 'components/Preloader'
+import Transition from 'components/Transition'
 
 import About from 'pages/About'
 import Collections from 'pages/Collections'
@@ -18,6 +18,7 @@ class App {
 
     this.createCanvas()
     this.createPreloader()
+    this.createTransition()
     this.createNavigation()
     this.createPages()
 
@@ -49,28 +50,22 @@ class App {
     })
   }
 
+  createTransition () {
+    this.transition = new Transition()
+  }
+
   createPages () {
     this.about = new About()
     this.collections = new Collections()
-    // this.details = new Details()
     this.home = new Home()
 
     this.pages = {
       '/': this.home,
       '/about': this.about,
-      '/collections': this.collections,
-    //   '/detail': this.details
+      '/collections': this.collections
     }
 
-    // console.log(this.template)
-
-    console.log(this.template)
-
-    // if (this.template.indexOf('/detail') > -1) {
-    //   this.page = this.case
-    // } else {
-      this.page = this.pages[this.template]
-    // }
+    this.page = this.pages[this.template]
   }
 
   /**
@@ -92,9 +87,13 @@ class App {
   }
 
   async onChange ({ url, push = true }) {
-    this.canvas.onChangeStart(this.template, url)
+    url = url.replace(window.location.origin, '')
 
-    await this.page.hide()
+    const page = this.pages[url]
+
+    await this.transition.show({
+      color: page.element.getAttribute('data-color')
+    })
 
     if (push) {
       window.history.pushState({}, '', url)
@@ -102,17 +101,17 @@ class App {
 
     this.template = window.location.pathname
 
-    console.log(this.template)
+    this.page.hide()
 
     this.navigation.onChange(this.template)
+    this.canvas.onChange(this.template)
 
-    this.canvas.onChangeEnd(this.template)
-
-    this.page = this.pages[this.template]
+    this.page = page
+    this.page.show()
 
     this.onResize()
 
-    this.page.show()
+    this.transition.hide()
   }
 
   onResize () {
@@ -206,12 +205,25 @@ class App {
     const links = document.querySelectorAll('a')
 
     each(links, link => {
-      link.onclick = event => {
-        event.preventDefault()
+      const isLocal = link.href.indexOf(window.location.origin) > -1
 
-        const { href } = link
+      const isNotEmail = link.href.indexOf('mailto') === -1
+      const isNotPhone = link.href.indexOf('tel') === -1
 
-        this.onChange({ url: href })
+      if (isLocal) {
+        link.onclick = event => {
+          event.preventDefault()
+
+          this.onChange({
+            url: link.href
+          })
+        }
+
+        link.onmouseenter = event => this.onLinkMouseEnter(link)
+        link.onmouseleave = event => this.onLinkMouseLeave(link)
+      } else if (isNotEmail && isNotPhone) {
+        link.rel = 'noopener'
+        link.target = '_blank'
       }
     })
   }

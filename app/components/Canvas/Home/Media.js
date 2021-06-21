@@ -68,18 +68,32 @@ export default class {
   /**
    * Animations.
    */
-  show () {
-    GSAP.fromTo(this.program.uniforms.uAlpha, {
+  show (isPreloaded) {
+    const delay = isPreloaded ? 2.5 : 0
+
+    this.timelineIn = GSAP.timeline({
+      delay: GSAP.utils.random(delay, delay + 1.5)
+    })
+
+    this.timelineIn.fromTo(this.program.uniforms.uAlpha, {
       value: 0
     }, {
+      duration: 2,
+      ease: 'expo.inOut',
       value: 0.4
-    })
+    }, 'start')
+
+    this.timelineIn.fromTo(this.mesh.position, {
+      z: GSAP.utils.random(2, 6)
+    }, {
+      duration: 2,
+      ease: 'expo.inOut',
+      z: 0
+    }, 'start')
   }
 
   hide () {
-    GSAP.to(this.program.uniforms.uAlpha, {
-      value: 0
-    })
+
   }
 
   /**

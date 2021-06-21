@@ -1,5 +1,8 @@
 import Page from 'classes/Page'
 
+import { mapEach } from 'utils/dom'
+import { split } from 'utils/text'
+
 export default class extends Page {
   constructor () {
     super({
@@ -11,7 +14,9 @@ export default class extends Page {
 
       element: '.collections',
       elements: {
-        wrapper: '.collections__wrapper'
+        wrapper: '.collections__wrapper',
+
+        articlesDescriptions: '.collections__article__description'
       }
     })
   }
@@ -21,6 +26,18 @@ export default class extends Page {
    */
   async show (url) {
     this.element.classList.add(this.classes.active)
+
+    mapEach(this.elements.articlesDescriptions, element => {
+      split({
+        element,
+        expression: '<br>'
+      })
+
+      split({
+        element,
+        expression: '<br>'
+      })
+    })
 
     return super.show(url)
   }

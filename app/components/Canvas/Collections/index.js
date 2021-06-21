@@ -2,7 +2,7 @@ import { Plane, Raycast, Transform, Vec2 } from 'ogl'
 import GSAP from 'gsap'
 import Prefix from 'prefix'
 
-import map from 'lodash/map'
+import { getOffset, mapEach } from 'utils/dom'
 
 import Media from './Media'
 
@@ -24,8 +24,11 @@ export default class {
     this.galleryWrapperElement = document.querySelector('.collections__gallery__wrapper')
 
     this.titlesElement = document.querySelector('.collections__titles')
+    this.titlesItemsElements = document.querySelectorAll('.collections__titles__wrapper:nth-child(2) .collections__titles__item')
 
+    this.collectionsElement = document.querySelector('.collections')
     this.collectionsElements = document.querySelectorAll('.collections__article')
+    this.collectionsElementsLinks = document.querySelectorAll('.collections__gallery__link')
     this.collectionsElementsActive = 'collections__article--active'
 
     this.detailsElements = document.querySelectorAll('.detail')
@@ -59,8 +62,8 @@ export default class {
   }
 
   createGallery () {
-    this.medias = map(this.mediasElements, (element, index) => {
-      return new Media({
+    this.medias = mapEach(this.mediasElements, (element, index) => {
+      const media = new Media({
         detail: this.detailsElements[index],
         element,
         geometry: this.geometry,
@@ -69,15 +72,22 @@ export default class {
         scene: this.group,
         sizes: this.sizes
       })
+
+      media.on('open', this.onOpen.bind(this))
+      media.on('close', this.onClose.bind(this))
+
+      return media
     })
 
-    this.mediasMeshes = map(this.medias, media => media.jewlery)
+    this.mediasMeshes = mapEach(this.medias, media => media.jewlery)
   }
 
   /**
    * Animations.
    */
   async show () {
+    this.isVisible = true
+
     this.group.setParent(this.scene)
 
     if (this.transition) {
@@ -95,7 +105,7 @@ export default class {
       }, _ => {
         media.opacity.multiplier = 1
 
-        map(this.medias, item => {
+        mapEach(this.medias, item => {
           if (media !== item) {
             item.show()
           }
@@ -104,14 +114,45 @@ export default class {
         this.scroll.current = this.scroll.target = this.scroll.start = this.scroll.last = scroll
       })
     } else {
-      map(this.medias, media => media.show())
+      mapEach(this.medias, media => media.show())
     }
   }
 
   hide () {
+    document.body.style.cursor = ''
+
+    this.isVisible = false
+
     this.group.setParent(null)
 
-    map(this.medias, media => media.hide())
+    mapEach(this.medias, media => media.hide())
+  }
+
+  /**
+   * Listeners.
+   */
+  onOpen (index) {
+    this.isVisible = false
+
+    this.collectionsElement.classList.add('collections--open')
+
+    mapEach(this.medias, (media, mediaIndex) => {
+      if (mediaIndex === index) {
+        media.show()
+      } else {
+        media.hide()
+      }
+    })
+  }
+
+  onClose () {
+    this.isVisible = true
+
+    this.collectionsElement.classList.remove('collections--open')
+
+    mapEach(this.medias, media => {
+      media.show()
+    })
   }
 
   /**
@@ -124,36 +165,64 @@ export default class {
 
     this.scroll.last = this.scroll.target = 0
 
-    map(this.medias, media => media.onResize(event, this.scroll))
+    mapEach(this.medias, media => media.onResize(event, this.scroll))
+
+    mapEach(this.collectionsElementsLinks, (element, elementIndex) => {
+      element.bounds = getOffset(element)
+    })
+
+    mapEach(this.titlesItemsElements, element => {
+      element.bounds = getOffset(element)
+    })
 
     this.scroll.limit = this.bounds.width - this.medias[0].element.clientWidth
   }
 
   onTouchDown ({ x, y }) {
+    if (!this.isVisible) return
+
+    this.isDown = true
+
     this.scroll.last = this.scroll.current
-
-    this.mouse.set(2.0 * (x.start / this.renderer.width) - 1.0, 2.0 * (1.0 - y.start / this.renderer.height) - 1.0)
-
-    this.raycast.castMouse(this.camera, this.mouse)
-
-    map(this.medias, media => (media.isHit = false))
-
-    const [hit] = this.raycast.intersectBounds(this.mediasMeshes)
-
-    this.hit = hit.index
   }
 
   onTouchMove ({ x, y }) {
+    if (!this.isVisible) return
+
+    this.mouse.set(2.0 * (x.end / this.renderer.width) - 1.0, 2.0 * (1.0 - y.end / this.renderer.height) - 1.0)
+
+    this.raycast.castMouse(this.camera, this.mouse)
+
+    const [hit] = this.raycast.intersectBounds(this.mediasMeshes)
+
+    this.hit = hit ? hit.index : null
+
+    if (this.hit !== null && this.index === this.hit) {
+      document.body.style.cursor = 'pointer'
+    } else {
+      document.body.style.cursor = ''
+    }
+
+    if (!this.isDown) return
+
     const distance = x.start - x.end
 
     this.scroll.target = this.scroll.last - distance
   }
 
   onTouchUp ({ x, y }) {
-    this.medias[this.hit].animateIn()
+    if (!this.isVisible) return
+
+    this.isDown = false
+
+    if (this.hit !== null && this.index === this.hit) {
+      this.medias[this.hit].animateIn()
+    }
   }
 
   onWheel ({ pixelY }) {
+    if (!this.isVisible) return
+
     this.scroll.target += pixelY
   }
 
@@ -165,15 +234,44 @@ export default class {
 
     const selectedCollection = parseInt(this.mediasElements[this.index].getAttribute('data-index'))
 
-    map(this.collectionsElements, (element, elementIndex) => {
+    mapEach(this.collectionsElements, (element, elementIndex) => {
       if (elementIndex === selectedCollection) {
         element.classList.add(this.collectionsElementsActive)
       } else {
         element.classList.remove(this.collectionsElementsActive)
       }
     })
+  }
 
-    this.titlesElement.style[this.transformPrefix] = `translateY(-${25 * selectedCollection}%) translate(-50%, -50%) rotate(-90deg)`
+  onUpdateTitle () {
+    const map = {
+      0: 0,
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0
+    }
+
+    mapEach(this.collectionsElementsLinks, (element, elementIndex) => {
+      const index = element.getAttribute('data-index')
+
+      map[index] += element.bounds.width
+    })
+
+    const progress = [
+      GSAP.utils.clamp(0, 1, GSAP.utils.mapRange(0, map[0], 0, 1, -this.scroll.current)),
+      GSAP.utils.clamp(0, 1, GSAP.utils.mapRange(0, map[1], 0, 1, -this.scroll.current - map[0])),
+      GSAP.utils.clamp(0, 1, GSAP.utils.mapRange(0, map[2], 0, 1, -this.scroll.current - map[0] - map[1])),
+      GSAP.utils.clamp(0, 1, GSAP.utils.mapRange(0, map[3], 0, 1, -this.scroll.current - map[0] - map[1] - map[2]))
+    ]
+
+    let y = 0
+
+    mapEach(this.titlesItemsElements, (element, index) => {
+      y += element.bounds.height * progress[index]
+    })
+
+    this.titlesElement.style[this.transformPrefix] = `translateY(calc(-${y}px - 33.33% + ${window.innerHeight * 0.5}px))`
   }
 
   /**
@@ -198,7 +296,9 @@ export default class {
       this.onChange(index)
     }
 
-    map(this.medias, (media, index) => {
+    this.onUpdateTitle()
+
+    mapEach(this.medias, (media, index) => {
       media.update(this.scroll.current, this.index)
     })
   }

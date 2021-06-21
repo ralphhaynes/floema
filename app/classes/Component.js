@@ -5,6 +5,7 @@ import each from 'lodash/each'
 
 export default class Component extends EventEmitter {
   constructor ({
+    classes,
     element,
     elements
   }) {
@@ -12,6 +13,7 @@ export default class Component extends EventEmitter {
 
     AutoBind(this)
 
+    this.classes = classes
     this.selector = element
     this.selectorChildren = {
       ...elements

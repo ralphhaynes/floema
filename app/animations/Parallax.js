@@ -2,7 +2,7 @@ import Prefix from 'prefix'
 
 import { BREAKPOINT_TABLET } from 'utils/breakpoints'
 import { getOffset } from 'utils/dom'
-import { map } from 'utils/math'
+import { clamp, map } from 'utils/math'
 
 export default class {
   constructor ({ element }) {
@@ -10,16 +10,11 @@ export default class {
 
     this.element = element
     this.media = element.querySelector('img')
-
-    if (!this.media) {
-      this.media = element.querySelector('video')
-
-      this.isVideo = true
+    this.media.onload = _ => {
+      this.onResize()
     }
 
     this.isVisible = false
-
-    this.onResize()
 
     this.parallax = {
       current: -this.amount,
@@ -30,15 +25,19 @@ export default class {
       current: 1.15,
       target: 1.15
     }
+
+    this.onResize()
   }
 
   onResize () {
+    console.log('onResize')
+
     this.amount = window.innerWidth < BREAKPOINT_TABLET ? 10 : 150
     this.offset = getOffset(this.element)
   }
 
   update (scroll) {
-    if (this.isVideo) {
+    if (!this.offset) {
       return
     }
 
@@ -47,8 +46,8 @@ export default class {
     const offsetBottom = scroll.current + innerHeight
 
     if (offsetBottom >= this.offset.top) {
-      this.parallax = map(this.offset.top - scroll.current, -this.offset.height, innerHeight, this.amount, -this.amount)
-      this.scale = map(this.offset.top - scroll.current, -this.offset.height, innerHeight, 1, 1.15)
+      this.parallax = clamp(-this.amount, this.amount, map(this.offset.top - scroll.current, -this.offset.height, innerHeight, this.amount, -this.amount))
+      this.scale = clamp(1, 1.15, map(this.offset.top - scroll.current, -this.offset.height, innerHeight, 1, 1.15))
 
       this.media.style[this.transform] = `translate3d(0, ${this.parallax}px, 0) scale(${this.scale})`
     } else {
